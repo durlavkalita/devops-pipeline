@@ -1,0 +1,52 @@
+name: CI Pipeline
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Cache frontend dependencies
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: ${{runner.os}}-frontend-${{ hashFiles('frontend/package-lock.json') }}
+      
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Frontend tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Run Frontend lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Cache backend dependencies
+        uses: actions/cache@v3
+        with:
+          path: backend/node_modules
+          key: ${{runner.os}}-backend-${{ hashFiles('backend/package-lock.json') }}
+      
+      - name: Install backend Dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test
+
+      - name: Run backend lint
+        working-directory: backend
+        run: npm run lint

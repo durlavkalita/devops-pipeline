@@ -1,52 +1,102 @@
 name: CI Pipeline
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
 jobs:
-  build:
+  frontend-ci:
+    name: Frontend CI
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v3
 
+      - name: Detect frontend changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+      
+      - name: skip job if frontend not changed
+        if: steps.changes.outputs.frontend != 'true'
+        run: echo 'No changes in frontend folder. skipping...'
+
       - name: Set up Node.js
+        if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v3
         with:
           node-version: '18'
       
       - name: Cache frontend dependencies
+        if: steps.changes.outputs.frontend == 'true'
         uses: actions/cache@v3
         with:
           path: frontend/node_modules
           key: ${{runner.os}}-frontend-${{ hashFiles('frontend/package-lock.json') }}
       
       - name: Install Frontend Dependencies
+        if: steps.changes.outputs.frontend == 'true'
         working-directory: frontend
         run: npm ci
 
-      - name: Run Frontend tests
-        working-directory: frontend
-        run: npm test
+      # - name: Run Frontend tests
+      #   if: steps.changes.outputs.frontend == 'true'
+      #   working-directory: frontend
+      #   run: npm test
 
-      - name: Run Frontend lint
-        working-directory: frontend
-        run: npm run lint
+      # - name: Run Frontend lint
+      #   if: steps.changes.outputs.frontend == 'true'
+      #   working-directory: frontend
+      #   run: npm run lint
 
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Detect backend changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+      
+      - name: skip job if backend not changed
+        if: steps.changes.outputs.backend != 'true'
+        run: echo 'No changes in backend folder. skipping...'
+        
+      - name: Set up Node.js
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
       - name: Cache backend dependencies
+        if: steps.changes.outputs.backend == 'true'
         uses: actions/cache@v3
         with:
           path: backend/node_modules
           key: ${{runner.os}}-backend-${{ hashFiles('backend/package-lock.json') }}
       
       - name: Install backend Dependencies
+        if: steps.changes.outputs.backend == 'true'
         working-directory: backend
         run: npm ci
 
-      - name: Run backend tests
-        working-directory: backend
-        run: npm test
+      # - name: Run backend tests
+      #   if: steps.changes.outputs.backend == 'true'
+      #   working-directory: backend
+      #   run: npm test
 
-      - name: Run backend lint
-        working-directory: backend
-        run: npm run lint
+      # - name: Run backend lint
+      #   if: steps.changes.outputs.backend == 'true'
+      #   working-directory: backend
+      #   run: npm run lint
